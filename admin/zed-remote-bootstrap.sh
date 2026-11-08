@@ -28,30 +28,18 @@ else
     echo "[+] Jujutsu (jj) is already installed: $(command -v jj)"
 fi
 
-# 2. Transparent ~/.bashrc.d Setup for PATH
-ensure_bashrc_d_path() {
+# 2. Transparent ~/.bashrc.d Setup
+ensure_bashrc_d_loader() {
     local bashrc_d="${HOME}/.bashrc.d"
-    local dropin_file="${bashrc_d}/local-bin.bash"
-
-    if [[ ":$PATH:" == *":$BIN_DIR:"* ]] && [[ -f "$dropin_file" ]]; then
-        return 0
-    fi
-
     mkdir -p "$bashrc_d"
-    cat <<'EOF' > "$dropin_file"
-# Add ~/.local/bin to PATH for user-installed binaries
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
-EOF
-    echo "[+] Created PATH drop-in: $dropin_file"
 
     if [[ -f "${HOME}/.bashrc" ]] && ! grep -q '\.bashrc\.d' "${HOME}/.bashrc"; then
         echo ""
         echo "===================================================================="
         echo " [NOTICE] Enable modular ~/.bashrc.d configuration directory?"
         echo "===================================================================="
-        echo " Why:     ~/.local/bin needs to be in your PATH for user binaries."
+        echo " Why:     Enables modular PATH and tool configurations without"
+        echo "          polluting or manually editing your ~/.bashrc."
         echo " Benefit: ~/.bashrc.d allows tools to add PATH & environment settings"
         echo "          in separate, clean drop-in files without ever modifying"
         echo "          your main ~/.bashrc again."
@@ -65,8 +53,9 @@ EOF
         echo "       unset rc"
         echo "   fi"
         echo "===================================================================="
-
-        cat <<'EOF' >> "${HOME}/.bashrc"
+        read -rp "Append this loader block to ~/.bashrc now? [y/N]: " confirm_bashrc
+        if [[ "$confirm_bashrc" =~ ^[Yy]$ ]]; then
+            cat <<'EOF' >> "${HOME}/.bashrc"
 
 # Source ~/.bashrc.d drop-ins
 if [ -d ~/.bashrc.d ]; then
@@ -76,11 +65,48 @@ if [ -d ~/.bashrc.d ]; then
     unset rc
 fi
 EOF
-        echo "[+] Updated ~/.bashrc with ~/.bashrc.d loader."
+            echo "[+] Updated ~/.bashrc successfully."
+        else
+            echo "[-] Skipped updating ~/.bashrc. Left dotfiles unchanged."
+            echo "    To manually enable drop-ins, add ~/.bashrc.d loader to ~/.bashrc."
+        fi
     fi
 }
 
-ensure_bashrc_d_path
+ensure_bashrc_d_dropins() {
+    local bashrc_d="${HOME}/.bashrc.d"
+    mkdir -p "$bashrc_d"
+
+    # A. local-bin.bash: clean PATH addition for ~/.local/bin
+    local bin_dropin="${bashrc_d}/local-bin.bash"
+    cat <<'EOF' > "$bin_dropin"
+# Add ~/.local/bin to PATH for user-installed binaries
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+EOF
+    echo "[+] Created PATH drop-in: $bin_dropin"
+
+    # B. zed-standards.bash: clean zed-init function (no PATH pollution)
+    local zed_dropin="${bashrc_d}/zed-standards.bash"
+    cat <<'EOF' > "$zed_dropin"
+# Zed Standards quick project initializer
+# Usage: zed-init [project-path] (defaults to current directory)
+zed-init() {
+    local target="${1:-.}"
+    local install_script="${HOME}/Projects/zed-standards/install.sh"
+    if [[ ! -x "$install_script" ]]; then
+        echo "[-] Error: $install_script not found or not executable." >&2
+        return 1
+    fi
+    "$install_script" --project "$target"
+}
+EOF
+    echo "[+] Created zed-init drop-in: $zed_dropin"
+}
+
+ensure_bashrc_d_loader
+ensure_bashrc_d_dropins
 
 # 3. Clone or verify zed-standards repository
 ZED_STANDARDS_DIR="$PROJECTS_DIR/zed-standards"
@@ -99,6 +125,6 @@ echo "[+] Remote development host bootstrap complete!"
 echo "    Next steps:"
 echo "    1. Run: source ~/.bashrc (or reopen terminal)"
 echo "    2. Clone your development repositories into ~/Projects/<app>"
-echo "    3. Link standards into any workspace:"
-echo "       $ZED_STANDARDS_DIR/install.sh --project ~/Projects/<app>"
+echo "    3. Link standards into any workspace effortlessly:"
+echo "       cd ~/Projects/<app> && zed-init"
 echo "===================================================================="

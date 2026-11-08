@@ -55,10 +55,20 @@ This:
 For architectural background and details, see [`docs/design.md`](docs/design.md).
 
 ### Remote Host Bootstrapping
-On a new remote Linux host, VM, or container, run the admin bootstrap script to install Jujutsu (`jj`), configure `~/.bashrc.d` for `$PATH`, and clone base tools:
+On a new remote Linux host, VM, or container, run the admin bootstrap script to install Jujutsu (`jj`), configure `~/.bashrc.d`, clone `zed-standards`, and install the `zed-init` command drop-in:
+
+**One-line bootstrap (download & run):**
+```bash
+curl -sSLO https://raw.githubusercontent.com/in3x/zed-standards/main/admin/zed-remote-bootstrap.sh && bash zed-remote-bootstrap.sh
+```
+
+*(Alternatively, pipe directly: `curl -sSL https://raw.githubusercontent.com/in3x/zed-standards/main/admin/zed-remote-bootstrap.sh | bash`)*
+
+Once bootstrapped, reload your shell (`source ~/.bashrc`) and initializing any project workspace is as simple as:
 
 ```bash
-./admin/zed-remote-bootstrap.sh
+cd ~/Projects/my-app
+zed-init
 ```
 
 ### Local Global Installation

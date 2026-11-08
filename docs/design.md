@@ -91,14 +91,14 @@ To minimize startup friction on new remote Linux hosts (VMs, SSH servers, cloud 
 
 1. **Phase 1: Host Provisioning (`admin/zed-remote-bootstrap.sh`)**:
    - Installs Jujutsu (`jj`) into `~/.local/bin/`.
-   - Provisions modular `~/.bashrc.d/` directory and wires the loader into `~/.bashrc`.
-   - Ensures `~/.local/bin` is in `$PATH`.
+   - Provisions modular `~/.bashrc.d/` directory and prompts before wiring the loader into `~/.bashrc`.
+   - Drops `~/.bashrc.d/local-bin.bash` (PATH for `~/.local/bin`).
+   - Drops `~/.bashrc.d/zed-standards.bash` (provides `zed-init` shell function without PATH pollution).
    - Clones `zed-standards` into `~/Projects/zed-standards`.
-2. **Phase 2: Project Onboarding (`install.sh --project <path>`)**:
+2. **Phase 2: Project Onboarding (`zed-init`)**:
    - Run once per cloned or initialized repository:
      ```bash
-     ~/Projects/zed-standards/install.sh --project ~/Projects/<app>
-     # Or inside the project directory:
-     ~/Projects/zed-standards/install.sh --project .
+     cd ~/Projects/<app>
+     zed-init
      ```
    - Automatically symlinks skills, links `AGENTS.md`, and updates `.git/info/exclude`.

@@ -42,22 +42,31 @@ link_project() {
             if [[ -d "$skill" ]]; then
                 local skill_name
                 skill_name="$(basename "$skill")"
-                ln -sfn "$skill" "$proj_skills_dir/$skill_name"
-                echo "    [+] Linked skill: .agents/skills/$skill_name -> $skill"
+                local dest_skill="$proj_skills_dir/$skill_name"
+
+                if [[ -L "$dest_skill" ]]; then
+                    ln -sfn "$skill" "$dest_skill"
+                    echo "    [+] Refreshed skill: .agents/skills/$skill_name -> $skill"
+                elif [[ -e "$dest_skill" ]]; then
+                    echo "    [!] Notice: .agents/skills/$skill_name is a local directory (left untouched)."
+                else
+                    ln -s "$skill" "$dest_skill"
+                    echo "    [+] Linked skill: .agents/skills/$skill_name -> $skill"
+                fi
             fi
         done
     fi
 
     # 2. AGENTS.md (Non-destructive)
     local target_agents="$target_proj/AGENTS.md"
-    if [[ ! -e "$target_agents" ]]; then
-        ln -s "$REPO_DIR/AGENTS.md" "$target_agents"
-        echo "    [+] Linked AGENTS.md -> $REPO_DIR/AGENTS.md"
-    elif [[ -L "$target_agents" ]]; then
+    if [[ -L "$target_agents" ]]; then
         ln -sf "$REPO_DIR/AGENTS.md" "$target_agents"
         echo "    [+] Refreshed symlink: AGENTS.md -> $REPO_DIR/AGENTS.md"
+    elif [[ -e "$target_agents" ]]; then
+        echo "    [!] Notice: Project has an existing AGENTS.md file (left untouched)."
     else
-        echo "    [!] Notice: Project already has an existing AGENTS.md (left untouched)."
+        ln -s "$REPO_DIR/AGENTS.md" "$target_agents"
+        echo "    [+] Linked AGENTS.md -> $REPO_DIR/AGENTS.md"
     fi
 
     # 3. Prevent Git / Jujutsu working-copy pollution via .git/info/exclude
@@ -84,9 +93,19 @@ link_global() {
     echo "    Skills dir: $zed_skills_dir"
 
     mkdir -p "$zed_config_dir"
-    if [[ -f "$REPO_DIR/AGENTS.md" ]]; then
-        ln -sf "$REPO_DIR/AGENTS.md" "$zed_config_dir/AGENTS.md"
-        echo "    [+] Linked: $zed_config_dir/AGENTS.md -> $REPO_DIR/AGENTS.md"
+    local global_agents="$zed_config_dir/AGENTS.md"
+    if [[ -L "$global_agents" ]]; then
+        ln -sf "$REPO_DIR/AGENTS.md" "$global_agents"
+        echo "    [+] Refreshed: $global_agents -> $REPO_DIR/AGENTS.md"
+    elif [[ -e "$global_agents" ]]; then
+        echo "    [!] Notice: $global_agents is an existing regular file."
+        echo "        Backing up to AGENTS.md.bak before replacing with symlink."
+        cp -p "$global_agents" "${global_agents}.bak"
+        ln -sf "$REPO_DIR/AGENTS.md" "$global_agents"
+        echo "    [+] Linked: $global_agents -> $REPO_DIR/AGENTS.md"
+    else
+        ln -s "$REPO_DIR/AGENTS.md" "$global_agents"
+        echo "    [+] Linked: $global_agents -> $REPO_DIR/AGENTS.md"
     fi
 
     mkdir -p "$zed_skills_dir"
@@ -95,8 +114,17 @@ link_global() {
             if [[ -d "$skill" ]]; then
                 local skill_name
                 skill_name="$(basename "$skill")"
-                ln -sfn "$skill" "$zed_skills_dir/$skill_name"
-                echo "    [+] Linked skill: $zed_skills_dir/$skill_name -> $skill"
+                local dest_skill="$zed_skills_dir/$skill_name"
+
+                if [[ -L "$dest_skill" ]]; then
+                    ln -sfn "$skill" "$dest_skill"
+                    echo "    [+] Refreshed skill: $dest_skill -> $skill"
+                elif [[ -e "$dest_skill" ]]; then
+                    echo "    [!] Notice: $dest_skill is a local directory (left untouched)."
+                else
+                    ln -s "$skill" "$dest_skill"
+                    echo "    [+] Linked skill: $dest_skill -> $skill"
+                fi
             fi
         done
     fi
