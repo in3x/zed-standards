@@ -137,6 +137,18 @@ EOF
 ensure_bashrc_d_loader
 ensure_bashrc_d_dropins
 
+# 3. Link dev-bootstrap shared library into ~/.local/lib/dev-bootstrap
+link_dev_bootstrap_lib() {
+    local lib_dir="${HOME}/.local/lib"
+    local target_symlink="${lib_dir}/dev-bootstrap"
+
+    mkdir -p "$lib_dir"
+    ln -sfn "$REPO_ROOT/lib" "$target_symlink"
+    echo "[+] Linked shared library: $target_symlink -> $REPO_ROOT/lib"
+}
+
+link_dev_bootstrap_lib
+
 echo ""
 echo "===================================================================="
 echo "[+] Remote development host bootstrap complete!"

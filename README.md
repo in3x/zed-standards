@@ -11,6 +11,11 @@ zed-standards/
 ├── admin/
 │   ├── jj-install.sh          # Jujutsu (jj) installer & auto-upgrader
 │   └── zed-remote-bootstrap.sh # Remote Linux host bootstrap script (installs jj, ~/.bashrc.d)
+├── lib/                       # Shared platform library (symlinked to ~/.local/lib/dev-bootstrap)
+│   ├── lib-common.sh          # Loader for all platform primitives
+│   ├── lib-platform.sh        # OS & CPU architecture detection (amd64, arm64, musl targets)
+│   ├── lib-site.sh            # Deterministic site resolution (CLI argument or interactive menu)
+│   └── lib-deploy.sh          # Safe interactive file deployment (diff inspection, chmod/chown)
 ├── docs/
 │   └── design.md              # Client/remote architecture and distribution design notes
 ├── skills/

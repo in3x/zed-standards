@@ -95,6 +95,7 @@ To minimize startup friction on new remote Linux hosts (VMs, SSH servers, cloud 
    - Provisions modular `~/.bashrc.d/` directory and prompts before wiring the loader into `~/.bashrc`.
    - Drops `~/.bashrc.d/local-bin.bash` (PATH for `~/.local/bin`).
    - Drops `~/.bashrc.d/zed-standards.bash` (provides `zed-init` shell function pointing to repository `install.sh`).
+   - Symlinks `~/.local/lib/dev-bootstrap` to `zed-standards/lib` for shared operational helpers.
 2. **Phase 2: Project Onboarding (`zed-init`)**:
    - Run once per cloned or initialized repository:
      ```bash
@@ -102,3 +103,27 @@ To minimize startup friction on new remote Linux hosts (VMs, SSH servers, cloud 
      zed-init
      ```
    - Automatically symlinks skills, links `AGENTS.md`, and updates `.git/info/exclude`.
+
+---
+
+## 5. Shared Developer Platform Library (`~/.local/lib/dev-bootstrap`)
+
+To eliminate boilerplate duplication across administrative and operational scripts in multiple repositories, `zed-standards` provides a centralized procedural library:
+
+```text
+~/.local/lib/dev-bootstrap/ -> ~/Projects/zed-standards/lib/
+├── lib-common.sh              # Single-line include loader for all modules
+├── lib-platform.sh            # OS (linux/darwin) and CPU architecture (amd64, arm64, musl) detection
+├── lib-site.sh                # Deterministic site selection (CLI $1 with interactive menu fallback)
+└── lib-deploy.sh              # Safe file placement with change detection, diff prompts, and permissions
+```
+
+### Usage in Other Repositories
+Any management or operational script in any repository on the host can source shared primitives:
+```bash
+source "${HOME}/.local/lib/dev-bootstrap/lib-common.sh"
+
+ARCH="$(detect_arch_alias)"       # "amd64" or "arm64"
+SITE="$(resolve_site "${1:-}")"   # CLI arg or numbered menu
+```
+Because `~/.local/lib/dev-bootstrap` is a symlink to `zed-standards/lib`, improvements made to platform primitives are instantly available across all repositories on that host without running secondary deployment commands.

@@ -129,6 +129,13 @@ link_global() {
         done
     fi
 
+    if [[ -d "$REPO_DIR/lib" ]]; then
+        local user_lib_dir="${HOME}/.local/lib"
+        mkdir -p "$user_lib_dir"
+        ln -sfn "$REPO_DIR/lib" "$user_lib_dir/dev-bootstrap"
+        echo "    [+] Linked shared library: $user_lib_dir/dev-bootstrap -> $REPO_DIR/lib"
+    fi
+
     # Check for client-remote architecture warning
     if grep -qi microsoft /proc/version 2>/dev/null || [[ -n "${SSH_CONNECTION:-}" ]]; then
         echo ""
