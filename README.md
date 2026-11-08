@@ -6,8 +6,12 @@ A centralized repository containing personal engineering standards, repository s
 
 ```text
 zed-standards/
-├── AGENTS.md                  # Global axioms symlinked to ~/.config/zed/AGENTS.md
-├── install.sh                 # Bootstrap script linking AGENTS.md and skills into global paths
+├── AGENTS.md                  # Personal engineering standards & architectural axioms
+├── install.sh                 # Linker script for project workspaces and global environments
+├── admin/
+│   └── zed-remote-bootstrap.sh # Remote Linux host bootstrap script (installs jj, ~/.bashrc.d)
+├── docs/
+│   └── design.md              # Client/remote architecture and distribution design notes
 ├── skills/
 │   ├── package-scaffolding/       # Standard directory layout, root vs. user mode targets
 │   ├── site-conf-pattern/         # Site-specific profile isolation & deterministic resolution
@@ -30,9 +34,36 @@ zed-standards/
 4. **Transparent Dotfile Management**: Never modify `~/.bashrc` silently. Always explain what, why, and how it benefits the user before prompting for confirmation to wire up `~/.bashrc.d`.
 5. **Two-Stage Config Lifecycle**: Upstream `conf/` templates (Bash env, JSON, YAML, TOML, SOML) merge non-destructively into `site-conf/<site>/` via `site-profile` tools, which in turn deploy to system targets via deploy tools.
 
-## Installation / Sync
+## Usage & Installation
 
-To link or refresh this repository into your global Zed environment:
+### Remote Linux VM / Client-Remote Architecture
+When running Zed as a Windows client connecting to remote Linux VMs (or WSL), global configuration on the remote VM (`~/.config/zed`) is not read by the Windows client. Instead, link standards directly into each workspace:
+
 ```bash
-./install.sh
+# Link standards into the current repository
+./install.sh --project .
+
+# Or specify a target project path
+./install.sh --project ~/Projects/my-app
+```
+
+This:
+1. Links all skills into `<project>/.agents/skills/`.
+2. Links `AGENTS.md` (without overwriting existing project rules).
+3. Automatically adds `.agents/` and `AGENTS.md` to `.git/info/exclude` to keep working copies clean and prevent pushing personal symlinks upstream.
+
+For architectural background and details, see [`docs/design.md`](docs/design.md).
+
+### Remote Host Bootstrapping
+On a new remote Linux host, VM, or container, run the admin bootstrap script to install Jujutsu (`jj`), configure `~/.bashrc.d` for `$PATH`, and clone base tools:
+
+```bash
+./admin/zed-remote-bootstrap.sh
+```
+
+### Local Global Installation
+To install into local user configuration paths (`~/.config/zed` and `~/.agents/skills`):
+
+```bash
+./install.sh --global
 ```
