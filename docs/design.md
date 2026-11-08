@@ -90,11 +90,11 @@ When applying `zed-standards` to a target repository:
 To minimize startup friction on new remote Linux hosts (VMs, SSH servers, cloud instances), a two-phase bootstrap pattern is used:
 
 1. **Phase 1: Host Provisioning (`admin/zed-remote-bootstrap.sh`)**:
-   - Installs Jujutsu (`jj`) into `~/.local/bin/`.
+   - Run from the cloned `zed-standards` repository (`~/Projects/zed-standards`).
+   - Installs or upgrades Jujutsu (`jj`) to the latest release via `admin/jj-install.sh`.
    - Provisions modular `~/.bashrc.d/` directory and prompts before wiring the loader into `~/.bashrc`.
    - Drops `~/.bashrc.d/local-bin.bash` (PATH for `~/.local/bin`).
-   - Drops `~/.bashrc.d/zed-standards.bash` (provides `zed-init` shell function without PATH pollution).
-   - Clones `zed-standards` into `~/Projects/zed-standards`.
+   - Drops `~/.bashrc.d/zed-standards.bash` (provides `zed-init` shell function pointing to repository `install.sh`).
 2. **Phase 2: Project Onboarding (`zed-init`)**:
    - Run once per cloned or initialized repository:
      ```bash

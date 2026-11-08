@@ -2,31 +2,60 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BIN_DIR="${HOME}/.local/bin"
-PROJECTS_DIR="${HOME}/Projects"
+
+show_help() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Bootstraps a remote Linux development host with Jujutsu (jj), ~/.bashrc.d loader,
+and the zed-init project linker.
+
+Options forwarded to jj-install.sh:
+  -v, --version <TAG>   Install a specific Jujutsu version (e.g., v0.47.1).
+  -f, --force           Force reinstall even if current version is up to date.
+      --user            Install to ~/.local/bin (default).
+      --system          Install to /usr/local/bin.
+  -d, --dir <PATH>      Target directory for the jj executable.
+  -h, --help            Show this help message.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    show_help
+    exit 0
+fi
 
 echo "===================================================================="
 echo " Bootstrapping Remote Linux Development Host"
 echo "===================================================================="
 
-mkdir -p "$BIN_DIR" "$PROJECTS_DIR"
+mkdir -p "$BIN_DIR"
 
-# 1. Install Jujutsu (jj) if not already installed
-if ! command -v jj >/dev/null 2>&1; then
-    echo "[+] Jujutsu (jj) not found. Installing latest release..."
-    LATEST_TAG=$(curl -sSL "https://api.github.com/repos/martinvonz/jj/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-    TARBALL="jj-v${LATEST_TAG}-x86_64-unknown-linux-musl.tar.gz"
-    DOWNLOAD_URL="https://github.com/martinvonz/jj/releases/download/v${LATEST_TAG}/${TARBALL}"
-
-    TMP_DIR=$(mktemp -d)
-    echo "[+] Downloading ${TARBALL}..."
-    curl -sSL "$DOWNLOAD_URL" | tar -xz -C "$TMP_DIR"
-    install -m 755 "$TMP_DIR/jj" "$BIN_DIR/jj"
-    rm -rf "$TMP_DIR"
-    echo "[+] Installed Jujutsu (jj) v${LATEST_TAG} to $BIN_DIR/jj"
-else
-    echo "[+] Jujutsu (jj) is already installed: $(command -v jj)"
+# 1. Install or upgrade Jujutsu (jj) to the latest release
+echo "[+] Ensuring Jujutsu (jj) is installed and up to date..."
+if [[ ! -x "$SCRIPT_DIR/jj-install.sh" ]]; then
+    echo "[-] Error: $SCRIPT_DIR/jj-install.sh not found or not executable." >&2
+    exit 1
 fi
+
+# Forward arguments to jj-install.sh, defaulting to --user if no target mode is specified
+JJ_ARGS=()
+has_target=false
+for arg in "$@"; do
+    if [[ "$arg" == "--user" || "$arg" == "--system" || "$arg" == "-d" || "$arg" == "--dir" ]]; then
+        has_target=true
+        break
+    fi
+done
+
+if [[ "$has_target" == false ]]; then
+    JJ_ARGS+=("--user")
+fi
+JJ_ARGS+=("$@")
+
+"$SCRIPT_DIR/jj-install.sh" "${JJ_ARGS[@]}"
 
 # 2. Transparent ~/.bashrc.d Setup
 ensure_bashrc_d_loader() {
@@ -89,17 +118,17 @@ EOF
 
     # B. zed-standards.bash: clean zed-init function (no PATH pollution)
     local zed_dropin="${bashrc_d}/zed-standards.bash"
-    cat <<'EOF' > "$zed_dropin"
+    cat <<EOF > "$zed_dropin"
 # Zed Standards quick project initializer
 # Usage: zed-init [project-path] (defaults to current directory)
 zed-init() {
-    local target="${1:-.}"
-    local install_script="${HOME}/Projects/zed-standards/install.sh"
-    if [[ ! -x "$install_script" ]]; then
-        echo "[-] Error: $install_script not found or not executable." >&2
+    local target="\${1:-.}"
+    local install_script="${REPO_ROOT}/install.sh"
+    if [[ ! -x "\$install_script" ]]; then
+        echo "[-] Error: \$install_script not found or not executable." >&2
         return 1
     fi
-    "$install_script" --project "$target"
+    "\$install_script" --project "\$target"
 }
 EOF
     echo "[+] Created zed-init drop-in: $zed_dropin"
@@ -107,17 +136,6 @@ EOF
 
 ensure_bashrc_d_loader
 ensure_bashrc_d_dropins
-
-# 3. Clone or verify zed-standards repository
-ZED_STANDARDS_DIR="$PROJECTS_DIR/zed-standards"
-if [[ ! -d "$ZED_STANDARDS_DIR" ]]; then
-    echo "[+] Cloning zed-standards into $ZED_STANDARDS_DIR..."
-    git clone "${ZED_STANDARDS_REPO:-https://github.com/in3x/zed-standards.git}" "$ZED_STANDARDS_DIR" || {
-        echo "[-] Note: Update ZED_STANDARDS_REPO if your upstream repo is hosted on a private Gitea/Git server."
-    }
-else
-    echo "[+] zed-standards is present at $ZED_STANDARDS_DIR"
-fi
 
 echo ""
 echo "===================================================================="

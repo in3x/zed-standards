@@ -9,6 +9,7 @@ zed-standards/
 ├── AGENTS.md                  # Personal engineering standards & architectural axioms
 ├── install.sh                 # Linker script for project workspaces and global environments
 ├── admin/
+│   ├── jj-install.sh          # Jujutsu (jj) installer & auto-upgrader
 │   └── zed-remote-bootstrap.sh # Remote Linux host bootstrap script (installs jj, ~/.bashrc.d)
 ├── docs/
 │   └── design.md              # Client/remote architecture and distribution design notes
@@ -51,6 +52,12 @@ This:
 1. Links all skills into `<project>/.agents/skills/`.
 2. Links `AGENTS.md` (without overwriting existing project rules).
 3. Automatically adds `.agents/` and `AGENTS.md` to `.git/info/exclude` to keep working copies clean and prevent pushing personal symlinks upstream.
+
+> **Note on Jujutsu (`jj`)**: Linking these markdown files provisions the Zed agent's skills and axioms, which mandate `jj` as the primary VCS tool. To install `jj` or upgrade an existing installation to a higher revision, run:
+> ```bash
+> ./admin/jj-install.sh
+> ```
+> This queries GitHub for the latest stable release, checks your current version, and automatically upgrades the binary if a higher version exists.
 
 For architectural background and details, see [`docs/design.md`](docs/design.md).
 
