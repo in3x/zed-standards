@@ -15,7 +15,9 @@ zed-standards/
 │   ├── lib-common.sh          # Loader for all platform primitives
 │   ├── lib-platform.sh        # OS & CPU architecture detection (amd64, arm64, musl targets)
 │   ├── lib-site.sh            # Deterministic site resolution (CLI argument or interactive menu)
-│   └── lib-deploy.sh          # Safe interactive file deployment (diff inspection, chmod/chown)
+│   ├── lib-deploy.sh          # Safe interactive file deployment (diff inspection, chmod/chown)
+│   ├── lib-secret.sh          # Diceware passphrase generator & proof-of-capture ceremony
+│   └── lib-cidata.sh          # NoCloud Cloud-Init ISO generation helper
 ├── docs/
 │   └── design.md              # Client/remote architecture and distribution design notes
 ├── skills/
