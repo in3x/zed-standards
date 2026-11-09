@@ -9,7 +9,7 @@ show_help() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS] [JJ_OPTIONS]
 
-Bootstraps a remote Linux host with development tools and libraries.
+Bootstraps a Linux host locally with development tools and libraries.
 
 Bootstrap Modes:
       --all             [Audience A] Full interactive setup: installs jj, ~/.bashrc.d,
@@ -52,9 +52,9 @@ done
 
 echo "===================================================================="
 if [[ "$LIB_ONLY" == true ]]; then
-    echo " Bootstrapping Headless Platform Library (Audience B)"
+    echo " Bootstrapping Local Host for Headless Platform Library (Audience B)"
 else
-    echo " Bootstrapping Remote Linux Development Host (Audience A)"
+    echo " Bootstrapping Local Host for Development (Audience A)"
 fi
 echo "===================================================================="
 
@@ -181,11 +181,11 @@ link_dev_bootstrap_lib
 echo ""
 echo "===================================================================="
 if [[ "$LIB_ONLY" == true ]]; then
-    echo "[+] Headless platform library bootstrap complete!"
+    echo "[+] Headless platform library host bootstrap complete!"
     echo "    Shared library available at: ~/.local/lib/dev-bootstrap/"
     echo "    Reload shell with: source ~/.bashrc"
 else
-    echo "[+] Remote development host bootstrap complete!"
+    echo "[+] Development host bootstrap complete!"
     echo "    Next steps:"
     echo "    1. Run: source ~/.bashrc (or reopen terminal)"
     echo "    2. Clone your development repositories into ~/Projects/<app>"

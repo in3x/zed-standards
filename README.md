@@ -12,7 +12,7 @@ zed-standards/
 ├── install.sh                 # Linker script for project workspaces and global environments
 ├── admin/
 │   ├── jj-install.sh          # Jujutsu (jj) installer & auto-upgrader
-│   └── zed-remote-bootstrap.sh # Remote Linux host bootstrap script (installs jj, ~/.bashrc.d)
+│   └── host-bootstrap.sh      # Host bootstrap script (installs jj, ~/.bashrc.d, dev-bootstrap)
 ├── lib/                       # Shared platform library (symlinked to ~/.local/lib/dev-bootstrap)
 │   ├── lib-common.sh          # Loader for all platform primitives
 │   ├── lib-platform.sh        # OS & CPU architecture detection (amd64, arm64, musl targets)
@@ -71,18 +71,22 @@ This:
 
 For architectural background and details, see [`docs/design.md`](docs/design.md).
 
-### Remote Host Bootstrapping
-On a new remote Linux host, VM, or container, clone the repository securely and run the bootstrap script to install Jujutsu (`jj`), configure `~/.bashrc.d`, and register the `zed-init` shell function:
+### Target Host / Node Bootstrapping
+
+These commands are executed **locally on the target Linux machine** (whether it is a remote dev VM, a cloud node, or a physical server) to prepare its local environment:
 
 ```bash
+# 1. On the target Linux host, clone zed-standards:
 mkdir -p ~/Projects
 git clone git@github.com:in3x/zed-standards.git ~/Projects/zed-standards
-bash ~/Projects/zed-standards/admin/zed-remote-bootstrap.sh
+
+# 2. Run the host bootstrap script locally:
+bash ~/Projects/zed-standards/admin/host-bootstrap.sh
 ```
 
-*(Alternatively, if SSH keys are not yet configured on the host, use HTTPS: `git clone https://github.com/in3x/zed-standards.git ~/Projects/zed-standards`)*
+*(Alternatively, if SSH keys are not yet configured on that host, use HTTPS: `git clone https://github.com/in3x/zed-standards.git ~/Projects/zed-standards`)*
 
-Once bootstrapped, reload your shell (`source ~/.bashrc`) and initializing any project workspace is as simple as:
+Once bootstrapped, reload your shell (`source ~/.bashrc`) and initializing any project workspace locally on that machine is as simple as:
 
 ```bash
 cd ~/Projects/my-app
@@ -100,4 +104,4 @@ To install into local user configuration paths:
 ./install.sh --lib-only
 ```
 
-*(For headless server bootstrap without editor tools: `bash ./admin/zed-remote-bootstrap.sh --lib-only`)*
+*(For headless server bootstrap without editor tools: `bash ./admin/host-bootstrap.sh --lib-only`)*

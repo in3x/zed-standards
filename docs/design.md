@@ -85,11 +85,11 @@ When applying `zed-standards` to a target repository:
 
 ---
 
-## 4. Remote Host Bootstrapping
+## 4. Target Host Provisioning (Local Execution)
 
-To minimize startup friction on new remote Linux hosts (VMs, SSH servers, cloud instances), a two-phase bootstrap pattern is used:
+To minimize startup friction on a newly cloned target Linux machine (whether it is a dev VM, SSH server, cloud instance, or physical server), a two-phase bootstrap pattern is executed **locally on that host**:
 
-1. **Phase 1: Host Provisioning (`admin/zed-remote-bootstrap.sh`)**:
+1. **Phase 1: Host Provisioning (`admin/host-bootstrap.sh`)**:
    - Run from the cloned `zed-standards` repository (`~/Projects/zed-standards`).
    - Installs or upgrades Jujutsu (`jj`) to the latest release via `admin/jj-install.sh`.
    - Provisions modular `~/.bashrc.d/` directory and prompts before wiring the loader into `~/.bashrc`.
@@ -160,4 +160,4 @@ To ensure that splitting these two concerns into separate repositories in the fu
 2. **The Procedural "Muscle"** (`lib/`, `admin/`): Contains standalone POSIX/Bash shell scripts that execute deployments, binary installations, and hardware/OS detection.
 3. **The Installer Entry Points**:
    - `install.sh --lib-only` provisions solely the procedural platform library.
-   - `admin/zed-remote-bootstrap.sh --lib-only` sets up headless production servers without editor artifacts.
+   - `admin/host-bootstrap.sh --lib-only` sets up headless production servers without editor artifacts.
