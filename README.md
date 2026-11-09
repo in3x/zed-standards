@@ -17,7 +17,8 @@ zed-standards/
 │   ├── lib-site.sh            # Deterministic site resolution (CLI argument or interactive menu)
 │   ├── lib-deploy.sh          # Safe interactive file deployment (diff inspection, chmod/chown)
 │   ├── lib-secret.sh          # Diceware passphrase generator & proof-of-capture ceremony
-│   └── lib-cidata.sh          # NoCloud Cloud-Init ISO generation helper
+│   ├── lib-cidata.sh          # NoCloud Cloud-Init ISO generation helper
+│   └── lib-telemetry.sh       # Healthchecks.io & NTFY push telemetry helpers
 ├── docs/
 │   └── design.md              # Client/remote architecture and distribution design notes
 ├── skills/
