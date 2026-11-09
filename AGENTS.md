@@ -17,6 +17,11 @@
     3. Push to remote (`jj git push`).
     4. Ensure a fresh, clean working copy revision exists (`jj new` if not auto-created).
 
+  - When instructed to **`"mark it"`**, or **`"record it"`**:
+    1. Ensure the working copy revision has a clear description (`jj describe`).
+    2. seal off this set set of changes (`jj new`)
+    2. Advance the active tracking bookmark to `@` (`jj bookmark set <branch> -r @`, defaulting to `main`).
+
 ## Script & Tooling Architecture
 - **Single-Purpose Scripts**: Keep one script to one function (or very closely related functions).
 - **Separation of Concerns**:
