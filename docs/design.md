@@ -115,7 +115,10 @@ To eliminate boilerplate duplication across administrative and operational scrip
 ├── lib-common.sh              # Single-line include loader for all modules
 ├── lib-platform.sh            # OS (linux/darwin) and CPU architecture (amd64, arm64, musl) detection
 ├── lib-site.sh                # Deterministic site selection (CLI $1 with interactive menu fallback)
-└── lib-deploy.sh              # Safe file placement with change detection, diff prompts, and permissions
+├── lib-deploy.sh              # Safe file placement with change detection, diff prompts, and permissions
+├── lib-secret.sh              # Diceware passphrase generator & proof-of-capture ceremony
+├── lib-cidata.sh              # NoCloud Cloud-Init ISO generation helper
+└── lib-telemetry.sh           # Healthchecks.io & NTFY push notification alerting helpers
 ```
 
 ### Usage in Other Repositories
@@ -127,3 +130,34 @@ ARCH="$(detect_arch_alias)"       # "amd64" or "arm64"
 SITE="$(resolve_site "${1:-}")"   # CLI arg or numbered menu
 ```
 Because `~/.local/lib/dev-bootstrap` is a symlink to `zed-standards/lib`, improvements made to platform primitives are instantly available across all repositories on that host without running secondary deployment commands.
+
+---
+
+## 6. Two Audiences: Dual-Purpose Repository Architecture
+
+This body of work serves two distinct audiences with different requirements:
+
+```
+Audience A: Developer Workstations & Interactive AI Sessions
+┌──────────────────────────────────────────────────────────────────┐
+│ • Needs: AGENTS.md + .agents/skills/ + dev-bootstrap library     │
+│ • Installed via: ./install.sh --project <path>  OR  --all        │
+│ • Tooling: zed-init helper, interactive CLI workflows            │
+└──────────────────────────────────────────────────────────────────┘
+
+Audience B: Headless Servers, Automation, CI/CD, & Production Nodes
+┌──────────────────────────────────────────────────────────────────┐
+│ • Needs: dev-bootstrap library ONLY (~/.local/lib/dev-bootstrap) │
+│ • Installed via: ./install.sh --lib-only                         │
+│ • Tooling: jj-install.sh, lib-deploy, lib-site, lib-telemetry   │
+│ • Zero AI overhead: does not install editor agent skills/prompts │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Decoupling Strategy & Structural Boundaries
+To ensure that splitting these two concerns into separate repositories in the future is a zero-friction operation:
+1. **The Declarative "Brain"** (`AGENTS.md`, `skills/`): Contains all LLM agent instructions, architectural axioms, and skill catalogs.
+2. **The Procedural "Muscle"** (`lib/`, `admin/`): Contains standalone POSIX/Bash shell scripts that execute deployments, binary installations, and hardware/OS detection.
+3. **The Installer Entry Points**:
+   - `install.sh --lib-only` provisions solely the procedural platform library.
+   - `admin/zed-remote-bootstrap.sh --lib-only` sets up headless production servers without editor artifacts.

@@ -1,6 +1,8 @@
-# Zed Standards & Global Agent Skills
+# Zed Standards & Developer Platform Library
 
-A centralized repository containing personal engineering standards, repository scaffolding rules, and modular agent skills for use across all projects in the Zed editor.
+A centralized repository serving two complementary purposes:
+1. **AI Agent Standards & Skills**: Personal engineering standards, architectural axioms, and modular agent skills for use across projects in the Zed editor.
+2. **Shared Developer Platform Library (`lib/`)**: Reusable POSIX/Bash operational primitives (platform detection, deterministic site selection, safe file deployment, Diceware secrets, and healthcheck telemetry) for administrative scripts across all repositories.
 
 ## Repository Contents
 
@@ -88,8 +90,14 @@ zed-init
 ```
 
 ### Local Global Installation
-To install into local user configuration paths (`~/.config/zed` and `~/.agents/skills`):
+To install into local user configuration paths:
 
 ```bash
-./install.sh --global
+# Audience A (Full: AI skills + AGENTS.md + shared platform library)
+./install.sh --all
+
+# Audience B (Library Only: for headless servers, production nodes, or CI/CD)
+./install.sh --lib-only
 ```
+
+*(For headless server bootstrap without editor tools: `bash ./admin/zed-remote-bootstrap.sh --lib-only`)*

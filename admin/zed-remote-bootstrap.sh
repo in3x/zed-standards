@@ -7,10 +7,17 @@ BIN_DIR="${HOME}/.local/bin"
 
 show_help() {
     cat <<EOF
-Usage: $(basename "$0") [OPTIONS]
+Usage: $(basename "$0") [OPTIONS] [JJ_OPTIONS]
 
-Bootstraps a remote Linux development host with Jujutsu (jj), ~/.bashrc.d loader,
-and the zed-init project linker.
+Bootstraps a remote Linux host with development tools and libraries.
+
+Bootstrap Modes:
+      --all             [Audience A] Full interactive setup: installs jj, ~/.bashrc.d,
+                        zed-init command, and the shared platform library (default).
+  -l, --lib-only, --headless
+                        [Audience B] Headless / Production mode: installs jj and the
+                        shared platform library (~/.local/lib/dev-bootstrap), omitting
+                        interactive Zed agent tools.
 
 Options forwarded to jj-install.sh:
   -v, --version <TAG>   Install a specific Jujutsu version (e.g., v0.47.1).
@@ -22,13 +29,33 @@ Options forwarded to jj-install.sh:
 EOF
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    show_help
-    exit 0
-fi
+LIB_ONLY=false
+FORWARDED_ARGS=()
+
+for arg in "$@"; do
+    case "$arg" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -l|--lib-only|--headless)
+            LIB_ONLY=true
+            ;;
+        --all)
+            LIB_ONLY=false
+            ;;
+        *)
+            FORWARDED_ARGS+=("$arg")
+            ;;
+    esac
+done
 
 echo "===================================================================="
-echo " Bootstrapping Remote Linux Development Host"
+if [[ "$LIB_ONLY" == true ]]; then
+    echo " Bootstrapping Headless Platform Library (Audience B)"
+else
+    echo " Bootstrapping Remote Linux Development Host (Audience A)"
+fi
 echo "===================================================================="
 
 mkdir -p "$BIN_DIR"
@@ -43,7 +70,7 @@ fi
 # Forward arguments to jj-install.sh, defaulting to --user if no target mode is specified
 JJ_ARGS=()
 has_target=false
-for arg in "$@"; do
+for arg in "${FORWARDED_ARGS[@]}"; do
     if [[ "$arg" == "--user" || "$arg" == "--system" || "$arg" == "-d" || "$arg" == "--dir" ]]; then
         has_target=true
         break
@@ -53,7 +80,7 @@ done
 if [[ "$has_target" == false ]]; then
     JJ_ARGS+=("--user")
 fi
-JJ_ARGS+=("$@")
+JJ_ARGS+=("${FORWARDED_ARGS[@]}")
 
 "$SCRIPT_DIR/jj-install.sh" "${JJ_ARGS[@]}"
 
@@ -116,9 +143,10 @@ fi
 EOF
     echo "[+] Created PATH drop-in: $bin_dropin"
 
-    # B. zed-standards.bash: clean zed-init function (no PATH pollution)
-    local zed_dropin="${bashrc_d}/zed-standards.bash"
-    cat <<EOF > "$zed_dropin"
+    # B. zed-standards.bash: clean zed-init function (only for full interactive Audience A)
+    if [[ "$LIB_ONLY" == false ]]; then
+        local zed_dropin="${bashrc_d}/zed-standards.bash"
+        cat <<EOF > "$zed_dropin"
 # Zed Standards quick project initializer
 # Usage: zed-init [project-path] (defaults to current directory)
 zed-init() {
@@ -131,7 +159,8 @@ zed-init() {
     "\$install_script" --project "\$target"
 }
 EOF
-    echo "[+] Created zed-init drop-in: $zed_dropin"
+        echo "[+] Created zed-init drop-in: $zed_dropin"
+    fi
 }
 
 ensure_bashrc_d_loader
@@ -151,10 +180,16 @@ link_dev_bootstrap_lib
 
 echo ""
 echo "===================================================================="
-echo "[+] Remote development host bootstrap complete!"
-echo "    Next steps:"
-echo "    1. Run: source ~/.bashrc (or reopen terminal)"
-echo "    2. Clone your development repositories into ~/Projects/<app>"
-echo "    3. Link standards into any workspace effortlessly:"
-echo "       cd ~/Projects/<app> && zed-init"
+if [[ "$LIB_ONLY" == true ]]; then
+    echo "[+] Headless platform library bootstrap complete!"
+    echo "    Shared library available at: ~/.local/lib/dev-bootstrap/"
+    echo "    Reload shell with: source ~/.bashrc"
+else
+    echo "[+] Remote development host bootstrap complete!"
+    echo "    Next steps:"
+    echo "    1. Run: source ~/.bashrc (or reopen terminal)"
+    echo "    2. Clone your development repositories into ~/Projects/<app>"
+    echo "    3. Link standards into any workspace effortlessly:"
+    echo "       cd ~/Projects/<app> && zed-init"
+fi
 echo "===================================================================="

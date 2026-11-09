@@ -8,16 +8,23 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS] [PROJECT_PATH]
 
-Options:
-  -p, --project <path>  Link standards (skills and AGENTS.md) into a project directory.
-                        Defaults to the current working directory if path is omitted.
-  -g, --global          Link standards into user global directories (~/.config/zed and ~/.agents/skills).
-  -h, --help            Show this help message.
+Profiles & Options:
+  -p, --project <path>   [Audience A] Link standards (skills and AGENTS.md) into a project workspace.
+                         Defaults to current working directory if path is omitted.
+  -a, --all, -g, --global
+                         [Audience A] Full host setup: links skills, AGENTS.md,
+                         and the shared platform library (~/.local/lib/dev-bootstrap).
+  -l, --lib-only, --headless
+                         [Audience B] Install ONLY the shared platform library
+                         (~/.local/lib/dev-bootstrap). Skips editor skills and AI instructions.
+                         Ideal for production servers, CI/CD runners, and headless automation.
+  -h, --help             Show this help message.
 
 Examples:
   $(basename "$0") --project .                 # Link into current repository
   $(basename "$0") --project ~/Projects/my-app # Link into specific project
-  $(basename "$0") --global                    # Install to user-level global config
+  $(basename "$0") --all                       # Full host install (skills + library)
+  $(basename "$0") --lib-only                  # Headless server library install
 EOF
 }
 
@@ -82,6 +89,21 @@ link_project() {
     fi
 
     echo "[+] Project setup complete for: $target_proj"
+}
+
+link_lib_only() {
+    local user_lib_dir="${HOME}/.local/lib"
+    local target_symlink="${user_lib_dir}/dev-bootstrap"
+
+    echo "[+] Installing dev-bootstrap shared platform library (Audience B / Headless)..."
+    mkdir -p "$user_lib_dir"
+    ln -sfn "$REPO_DIR/lib" "$target_symlink"
+    echo "    [+] Linked: $target_symlink -> $REPO_DIR/lib"
+    echo "    Available modules:"
+    for mod in "$REPO_DIR/lib"/lib-*.sh; do
+        [[ -f "$mod" ]] && echo "      - $(basename "$mod")"
+    done
+    echo "[+] Platform library ready at: $target_symlink"
 }
 
 link_global() {
@@ -168,8 +190,11 @@ case "$1" in
         target="${2:-.}"
         link_project "$target"
         ;;
-    -g|--global)
+    -a|--all|-g|--global)
         link_global
+        ;;
+    -l|--lib-only|--headless)
+        link_lib_only
         ;;
     -h|--help)
         usage
