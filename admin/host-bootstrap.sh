@@ -13,11 +13,10 @@ Bootstraps a Linux host locally with development tools and libraries.
 
 Bootstrap Modes:
       --all             [Audience A] Full interactive setup: installs jj, ~/.bashrc.d,
-                        zed-init command, and the shared platform library (default).
+                        and the shared platform library (default).
   -l, --lib-only, --headless
                         [Audience B] Headless / Production mode: installs jj and the
-                        shared platform library (~/.local/lib/dev-bootstrap), omitting
-                        interactive Zed agent tools.
+                        shared platform library (~/.local/lib/dev-bootstrap).
 
 Options forwarded to jj-install.sh:
   -v, --version <TAG>   Install a specific Jujutsu version (e.g., v0.47.1).
@@ -133,7 +132,7 @@ ensure_bashrc_d_dropins() {
     local bashrc_d="${HOME}/.bashrc.d"
     mkdir -p "$bashrc_d"
 
-    # A. local-bin.bash: clean PATH addition for ~/.local/bin
+    # local-bin.bash: clean PATH addition for ~/.local/bin
     local bin_dropin="${bashrc_d}/local-bin.bash"
     cat <<'EOF' > "$bin_dropin"
 # Add ~/.local/bin to PATH for user-installed binaries
@@ -143,24 +142,8 @@ fi
 EOF
     echo "[+] Created PATH drop-in: $bin_dropin"
 
-    # B. zed-standards.bash: clean zed-init function (only for full interactive Audience A)
-    if [[ "$LIB_ONLY" == false ]]; then
-        local zed_dropin="${bashrc_d}/zed-standards.bash"
-        cat <<EOF > "$zed_dropin"
-# Zed Standards quick project initializer
-# Usage: zed-init [project-path] (defaults to current directory)
-zed-init() {
-    local target="\${1:-.}"
-    local install_script="${REPO_ROOT}/install.sh"
-    if [[ ! -x "\$install_script" ]]; then
-        echo "[-] Error: \$install_script not found or not executable." >&2
-        return 1
-    fi
-    "\$install_script" --project "\$target"
-}
-EOF
-        echo "[+] Created zed-init drop-in: $zed_dropin"
-    fi
+    # Clean up any legacy zed-standards.bash drop-in
+    rm -f "${bashrc_d}/zed-standards.bash"
 }
 
 ensure_bashrc_d_loader
@@ -189,7 +172,7 @@ else
     echo "    Next steps:"
     echo "    1. Run: source ~/.bashrc (or reopen terminal)"
     echo "    2. Clone your development repositories into ~/Projects/<app>"
-    echo "    3. Link standards into any workspace effortlessly:"
-    echo "       cd ~/Projects/<app> && zed-init"
+    echo "    3. Link standards into any workspace:"
+    echo "       cd ~/Projects/<app> && ${REPO_ROOT}/install.sh --project ."
 fi
 echo "===================================================================="

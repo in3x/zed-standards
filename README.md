@@ -89,12 +89,14 @@ bash ~/Projects/zed-standards/admin/host-bootstrap.sh
 
 *(Alternatively, if SSH keys are not yet configured on that host, use HTTPS: `git clone https://github.com/in3x/zed-standards.git ~/Projects/zed-standards`)*
 
-Once bootstrapped, reload your shell (`source ~/.bashrc`) and initializing any project workspace locally on that machine is as simple as:
+Once bootstrapped, reload your shell (`source ~/.bashrc`) and link standards into any project workspace with:
 
 ```bash
 cd ~/Projects/my-app
-zed-init
+~/Projects/zed-standards/install.sh --project .
 ```
+
+*(Or pass the path directly: `~/Projects/zed-standards/install.sh --project ~/Projects/my-app`)*
 
 ### Local Global Installation
 To install into local user configuration paths:

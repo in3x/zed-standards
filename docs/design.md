@@ -94,13 +94,12 @@ To minimize startup friction on a newly cloned target Linux machine (whether it 
    - Installs or upgrades Jujutsu (`jj`) to the latest release via `admin/jj-install.sh`.
    - Provisions modular `~/.bashrc.d/` directory and prompts before wiring the loader into `~/.bashrc`.
    - Drops `~/.bashrc.d/local-bin.bash` (PATH for `~/.local/bin`).
-   - Drops `~/.bashrc.d/zed-standards.bash` (provides `zed-init` shell function pointing to repository `install.sh`).
    - Symlinks `~/.local/lib/dev-bootstrap` to `zed-standards/lib` for shared operational helpers.
-2. **Phase 2: Project Onboarding (`zed-init`)**:
+2. **Phase 2: Project Onboarding (`install.sh --project <path>`)**:
    - Run once per cloned or initialized repository:
      ```bash
      cd ~/Projects/<app>
-     zed-init
+     ~/Projects/zed-standards/install.sh --project .
      ```
    - Automatically symlinks skills, links `AGENTS.md`, and updates `.git/info/exclude`.
 
@@ -142,7 +141,7 @@ Audience A: Developer Workstations & Interactive AI Sessions
 ┌──────────────────────────────────────────────────────────────────┐
 │ • Needs: AGENTS.md + .agents/skills/ + dev-bootstrap library     │
 │ • Installed via: ./install.sh --project <path>  OR  --all        │
-│ • Tooling: zed-init helper, interactive CLI workflows            │
+│ • Tooling: explicit ./install.sh --project CLI workflow          │
 └──────────────────────────────────────────────────────────────────┘
 
 Audience B: Headless Servers, Automation, CI/CD, & Production Nodes
