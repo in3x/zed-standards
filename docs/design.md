@@ -160,3 +160,58 @@ To ensure that splitting these two concerns into separate repositories in the fu
 3. **The Installer Entry Points**:
    - `install.sh --lib-only` provisions solely the procedural platform library.
    - `admin/host-bootstrap.sh --lib-only` sets up headless production servers without editor artifacts.
+
+---
+
+## 7. The Three Operational Topologies & Hybrid Debugging Architecture
+
+The ecosystem accommodates three operational models:
+
+### Topology 1: Pure Local Workstation
+Single machine running both the Zed GUI and local development (Linux / macOS).
+- **Execution**: Run `./install.sh --all` to link global configuration (`~/.config/zed/AGENTS.md`), global skills (`~/.agents/skills/`), and the shared library (`~/.local/lib/dev-bootstrap`).
+- **Discovery**: Zed natively inspects its local configuration directory.
+
+### Topology 2: Two-Tier Client-Remote
+Zed GUI runs on a local desktop (e.g. Windows); code authoring, terminals, and VCS run inside a remote Linux VM or WSL.
+- **Client Discovery Limitation**: The Windows Zed client cannot read global paths on the remote Linux VM (`~/.config/zed`).
+- **Solution**: Run `admin/host-bootstrap.sh` on the Dev Host to install `jj` and `dev-bootstrap`, then link standards directly into each workspace root via `install.sh --project <path>`. Zed scans `<workspace-root>/.agents/skills` and `<workspace-root>/AGENTS.md` over SSH/WSL.
+
+### Topology 3: Three-Tier Hybrid Target Echo (Cross-Distribution Development & Debugging)
+Code is authored on a general-purpose Dev Host (Tier 2, e.g. Ubuntu / WSL), but deployed, executed, and debugged on a specialized Target Node (Tier 3, e.g. Red Hat Enterprise Linux / Rocky / CentOS with SELinux enforcement).
+
+```text
+[ Tier 1: Windows Client (Desktop GUI) ]
+       │
+       ├── Window 1 (SSH / WSL to Dev Host: Ubuntu)  -> Code authoring & jj VCS
+       │
+       └── Window 2 (SSH to Target Node: Red Hat)     -> Native SELinux & daemon debugging
+                    │
+   Direct Peer Sync (sub-second over LAN/SSH, ZERO GitHub round-tripping)
+                    ▼
+[ Tier 3: Target Execution Node (Red Hat / Appliance) ]
+   • Receives direct sync into its local working copy
+   • Window 2's Zed Agent runs NATIVELY on Red Hat:
+     - Direct access to SELinux: `ausearch -m avc -ts recent`, `audit2allow`
+     - Direct access to systemd: `journalctl -u my-daemon -f`
+     - Direct access to RHEL configuration: `/etc/sysconfig/`
+```
+
+#### The Direct Peer Sync Advantage
+Developing on Ubuntu and testing on Red Hat often involves fast-paced, experimental trial-and-error (e.g. adjusting SELinux policy rules or license server ports). Round-tripping every small change through GitHub (`git push` -> GitHub -> `git pull` on Red Hat) creates severe workflow friction and pollutes shared git history.
+
+Instead, code is synchronized directly from Tier 2 to Tier 3 in milliseconds:
+- **Via Peer Jujutsu / Git Remote**:
+  Add the Red Hat machine as an SSH remote on the Dev Host:
+  ```bash
+  jj git remote add rhel-target ssh://rhel-target/home/user/Projects/my-app
+  jj git push --remote rhel-target
+  ```
+- **Via Direct rsync**:
+  ```bash
+  rsync -avz --exclude='.git' --exclude='.jj' ~/Projects/my-app/ rhel-target:~/Projects/my-app/
+  ```
+
+#### The Dual-Window Benefit
+- **Window 1 (Ubuntu Dev Host)**: Agent focuses on feature logic, code structure, and clean version control.
+- **Window 2 (Red Hat Target Node)**: Agent operates directly within the RHEL environment, diagnosing daemon crashes, reading audit logs, compiling SELinux `.te` policies with `checkmodule`, and testing systemd services without requiring SSH wrapper commands.

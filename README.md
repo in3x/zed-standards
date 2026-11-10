@@ -46,68 +46,86 @@ zed-standards/
 4. **Transparent Dotfile Management**: Never modify `~/.bashrc` silently. Always explain what, why, and how it benefits the user before prompting for confirmation to wire up `~/.bashrc.d`.
 5. **Two-Stage Config Lifecycle**: Upstream `conf/` templates (Bash env, JSON, YAML, TOML, SOML) merge non-destructively into `site-conf/<site>/` via `site-profile` tools, which in turn deploy to system targets via deploy tools.
 
-## Usage & Installation
+## Operational Topologies & Workflows
 
-### Remote Linux VM / Client-Remote Architecture
-When running Zed as a Windows client connecting to remote Linux VMs (or WSL), global configuration on the remote VM (`~/.config/zed`) is not read by the Windows client. Instead, link standards directly into each workspace:
+This repository supports three distinct deployment configurations:
 
-```bash
-# Link standards into the current repository
-./install.sh --project .
-
-# Or specify a target project path
-./install.sh --project ~/Projects/my-app
-
-# Safely remove zed-standards symlinks from a project (preserves project-native files)
-./install.sh --clean ~/Projects/my-app
-```
-
-This:
-1. Links all skills into `<project>/.agents/skills/`.
-2. Links `AGENTS.md` (without overwriting existing project rules).
-3. Automatically adds `.agents/`, `AGENTS.md`, and `.zed/` to `.gitignore` (for Jujutsu repos) or `.git/info/exclude` to keep working copies clean and prevent pushing personal symlinks upstream.
-
-> **Note on Jujutsu (`jj`)**: Linking these markdown files provisions the Zed agent's skills and axioms, which mandate `jj` as the primary VCS tool. To install `jj` or upgrade an existing installation to a higher revision, run:
-> ```bash
-> ./admin/jj-install.sh
-> ```
-> This queries GitHub for the latest stable release, checks your current version, and automatically upgrades the binary if a higher version exists.
-
-For architectural background and details, see [`docs/design.md`](docs/design.md).
-
-### Target Host / Node Bootstrapping
-
-These commands are executed **locally on the target Linux machine** (whether it is a remote dev VM, a cloud node, or a physical server) to prepare its local environment:
+### Topology 1: Pure Local Workstation (Native Desktop Zed)
+*Single machine running both the Zed GUI and local development (Linux / macOS).*
 
 ```bash
-# 1. On the target Linux host, clone zed-standards:
-mkdir -p ~/Projects
-git clone git@github.com:in3x/zed-standards.git ~/Projects/zed-standards
-
-# 2. Run the host bootstrap script locally:
-bash ~/Projects/zed-standards/admin/host-bootstrap.sh
-```
-
-*(Alternatively, if SSH keys are not yet configured on that host, use HTTPS: `git clone https://github.com/in3x/zed-standards.git ~/Projects/zed-standards`)*
-
-Once bootstrapped, reload your shell (`source ~/.bashrc`) and link standards into any project workspace with:
-
-```bash
-cd ~/Projects/my-app
-~/Projects/zed-standards/install.sh --project .
-```
-
-*(Or pass the path directly: `~/Projects/zed-standards/install.sh --project ~/Projects/my-app`)*
-
-### Local Global Installation
-To install into local user configuration paths:
-
-```bash
-# Audience A (Full: AI skills + AGENTS.md + shared platform library)
+# Full local install: links global skills, AGENTS.md, and platform library (~/.local/lib/dev-bootstrap)
 ./install.sh --all
-
-# Audience B (Library Only: for headless servers, production nodes, or CI/CD)
-./install.sh --lib-only
 ```
 
-*(For headless server bootstrap without editor tools: `bash ./admin/host-bootstrap.sh --lib-only`)*
+---
+
+### Topology 2: Two-Tier Client-Remote (Windows Client → Remote Dev Host)
+*Zed GUI runs on a Windows workstation; code authoring, terminals, and VCS run inside a remote Linux VM or WSL.*
+
+Because the Windows Zed client does not read global paths on the remote Linux host (`~/.config/zed`), standards are linked directly into each project workspace root on the remote machine:
+
+1. **Bootstrap the Dev Host** (executed once locally on the remote Linux VM / WSL):
+   ```bash
+   mkdir -p ~/Projects
+   git clone git@github.com:in3x/zed-standards.git ~/Projects/zed-standards
+   bash ~/Projects/zed-standards/admin/host-bootstrap.sh
+   source ~/.bashrc
+   ```
+
+2. **Onboard Any Project Workspace** (executed in each cloned project):
+   ```bash
+   cd ~/Projects/my-app
+   ~/Projects/zed-standards/install.sh --project .
+   ```
+   This links `.agents/skills/*` and `AGENTS.md` and keeps working copies clean via `.git/info/exclude` or `.gitignore`.
+   *(To unlink: `~/Projects/zed-standards/install.sh --clean .`)*
+
+---
+
+### Topology 3: Three-Tier Hybrid Target Echo (Windows Client → Dev Host → Target Node)
+*Dev on Ubuntu/WSL (Window 1), Test & Debug on Red Hat with SELinux (Window 2).*
+
+When developing on a Debian/Ubuntu dev host (Tier 2) but targeting deployment and debugging on a Red Hat/Rocky/CentOS host (Tier 3) with SELinux enforcement:
+
+```text
+[ Windows Client (Desktop GUI) ]
+       ├── Window 1 (SSH / WSL to Dev Host: Ubuntu)  -> Code authoring & jj VCS
+       └── Window 2 (SSH to Target Node: Red Hat)     -> Native SELinux & daemon debugging
+                    │
+   Direct Peer Sync (sub-second over LAN/SSH, ZERO GitHub round-tripping)
+                    ▼
+[ Target Node (Red Hat / Appliance) ]
+   • Provisioned via: bash ~/Projects/zed-standards/admin/host-bootstrap.sh --lib-only
+   • Linked via:      ~/Projects/zed-standards/install.sh --project .
+```
+
+1. **Provision the Target Node**:
+   Run the headless bootstrap on the Red Hat machine to install `jj` and `~/.local/lib/dev-bootstrap`:
+   ```bash
+   bash ~/Projects/zed-standards/admin/host-bootstrap.sh --lib-only
+   ```
+2. **Direct Peer Sync (Bypass GitHub Round-Trips)**:
+   Sync code directly between your Dev Host and Target Node in milliseconds without pushing experimental commits to GitHub:
+   ```bash
+   # From Dev Host (WSL/Ubuntu):
+   rsync -avz --exclude='.git' --exclude='.jj' ~/Projects/my-app/ rhel-target:~/Projects/my-app/
+   # Or via peer jj/git push:
+   jj git push --remote rhel-target
+   ```
+3. **Dual-Window Debugging**:
+   - **Window 1 (Dev Host)**: The Zed agent authors features, updates configuration templates, and tracks changes in `jj`.
+   - **Window 2 (Target Node)**: A second Zed window connects directly to the Red Hat node. The agent operates *natively* on Red Hat with direct access to inspect SELinux denials (`ausearch -m avc -ts recent`), compile policy packages (`audit2allow`), and debug systemd daemons (`journalctl -u my-daemon -f`).
+
+---
+
+### Headless Server & CI/CD Pipelines (Audience B)
+On production servers, test benches, or CI/CD runners where AI editor skills are not needed:
+
+```bash
+# Install only the shared platform library (~/.local/lib/dev-bootstrap):
+./install.sh --lib-only
+
+# Or provision the whole host in headless mode:
+bash ./admin/host-bootstrap.sh --lib-only
+```
