@@ -8,7 +8,8 @@
 
 ## Version Control (Jujutsu)
 - Use Jujutsu (`jj`) as the default VCS tool rather than raw `git`.
-- Use `jj status`, `jj diff`, and `jj log` for inspection.
+- Always pass `--no-pager` (or set `PAGER=cat`) for read-only Jujutsu commands (e.g. `jj --no-pager status`, `jj --no-pager log`, `jj --no-pager diff`) so interactive pagers do not hang.
+- Use `jj --no-pager status`, `jj --no-pager diff`, and `jj --no-pager log` for inspection.
 - Describe working copy revisions with clear, concise messages in the imperative mood.
 - **Workflow Shorthand**:
 

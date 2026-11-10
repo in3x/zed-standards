@@ -11,6 +11,10 @@ Usage: $(basename "$0") [OPTIONS] [PROJECT_PATH]
 Profiles & Options:
   -p, --project <path>   [Audience A] Link standards (skills and AGENTS.md) into a project workspace.
                          Defaults to current working directory if path is omitted.
+  -c, --clean, --unlink <path>
+                         Safely remove zed-standards symlinks from a project workspace
+                         without deleting native project files or non-standards skills.
+                         Defaults to current working directory if path is omitted.
   -a, --all, -g, --global
                          [Audience A] Full host setup: links skills, AGENTS.md,
                          and the shared platform library (~/.local/lib/dev-bootstrap).
@@ -23,6 +27,7 @@ Profiles & Options:
 Examples:
   $(basename "$0") --project .                 # Link into current repository
   $(basename "$0") --project ~/Projects/my-app # Link into specific project
+  $(basename "$0") --clean .                   # Remove zed-standards symlinks from current project
   $(basename "$0") --all                       # Full host install (skills + library)
   $(basename "$0") --lib-only                  # Headless server library install
 EOF
@@ -76,11 +81,24 @@ link_project() {
         echo "    [+] Linked AGENTS.md -> $REPO_DIR/AGENTS.md"
     fi
 
-    # 3. Prevent Git / Jujutsu working-copy pollution via .git/info/exclude
+    # 3. Prevent Git / Jujutsu working-copy pollution
+    # In Jujutsu (.jj) repositories, unignored files are auto-snapshotted into commits.
+    # We must register patterns in .gitignore to prevent accidental check-ins.
+    if [[ -d "$target_proj/.jj" ]] || [[ -f "$target_proj/.gitignore" ]]; then
+        local gitignore_file="$target_proj/.gitignore"
+        touch "$gitignore_file"
+        for pattern in ".agents/" "AGENTS.md" ".zed/"; do
+            if ! grep -qxF "$pattern" "$gitignore_file" 2>/dev/null; then
+                echo "$pattern" >> "$gitignore_file"
+                echo "    [+] Registered '$pattern' in .gitignore"
+            fi
+        done
+    fi
+
     if [[ -d "$target_proj/.git" ]]; then
         local exclude_file="$target_proj/.git/info/exclude"
         mkdir -p "$(dirname "$exclude_file")"
-        for pattern in ".agents/" "AGENTS.md"; do
+        for pattern in ".agents/" "AGENTS.md" ".zed/"; do
             if ! grep -qxF "$pattern" "$exclude_file" 2>/dev/null; then
                 echo "$pattern" >> "$exclude_file"
                 echo "    [+] Registered '$pattern' in .git/info/exclude"
@@ -90,6 +108,59 @@ link_project() {
 
     echo "[+] Project setup complete for: $target_proj"
 }
+clean_project() {
+    local raw_target="${1:-.}"
+    if [[ ! -d "$raw_target" ]]; then
+        echo "[-] Error: Project directory '$raw_target' does not exist." >&2
+        exit 1
+    fi
+
+    local target_proj
+    target_proj="$(cd "$raw_target" && pwd)"
+
+    echo "[*] Cleaning zed-standards links from: $target_proj"
+
+    # 1. Safely remove AGENTS.md ONLY if it points to zed-standards
+    local target_agents="$target_proj/AGENTS.md"
+    if [[ -L "$target_agents" ]]; then
+        local target
+        target="$(readlink "$target_agents" || true)"
+        if [[ "$target" == *"/zed-standards/"* || "$target" == *"zed-standards"* ]]; then
+            rm -f "$target_agents"
+            echo "    [-] Removed zed-standards symlink: AGENTS.md"
+        else
+            echo "    [=] Kept external symlink: AGENTS.md -> $target"
+        fi
+    elif [[ -e "$target_agents" ]]; then
+        echo "    [=] Kept project-native file: AGENTS.md"
+    fi
+
+    # 2. Safely remove ONLY individual skills pointing to zed-standards
+    local proj_skills_dir="$target_proj/.agents/skills"
+    if [[ -d "$proj_skills_dir" ]]; then
+        for skill in "$proj_skills_dir"/*; do
+            if [[ -L "$skill" ]]; then
+                local target
+                target="$(readlink "$skill" || true)"
+                if [[ "$target" == *"/zed-standards/"* || "$target" == *"zed-standards"* ]]; then
+                    rm -f "$skill"
+                    echo "    [-] Removed zed-standards skill: $(basename "$skill")"
+                else
+                    echo "    [=] Kept external symlink: $(basename "$skill") -> $target"
+                fi
+            elif [[ -e "$skill" ]]; then
+                echo "    [=] Kept project-native skill: $(basename "$skill")"
+            fi
+        done
+
+        # Clean up empty parent directories if nothing else remains
+        rmdir "$proj_skills_dir" 2>/dev/null || true
+        rmdir "$target_proj/.agents" 2>/dev/null || true
+    fi
+
+    echo "[+] Project cleanup complete for: $target_proj"
+}
+
 
 link_lib_only() {
     local user_lib_dir="${HOME}/.local/lib"
@@ -189,6 +260,10 @@ case "$1" in
     -p|--project)
         target="${2:-.}"
         link_project "$target"
+        ;;
+    -c|--clean|--unlink)
+        target="${2:-.}"
+        clean_project "$target"
         ;;
     -a|--all|-g|--global)
         link_global

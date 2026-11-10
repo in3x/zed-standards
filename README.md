@@ -56,12 +56,15 @@ When running Zed as a Windows client connecting to remote Linux VMs (or WSL), gl
 
 # Or specify a target project path
 ./install.sh --project ~/Projects/my-app
+
+# Safely remove zed-standards symlinks from a project (preserves project-native files)
+./install.sh --clean ~/Projects/my-app
 ```
 
 This:
 1. Links all skills into `<project>/.agents/skills/`.
 2. Links `AGENTS.md` (without overwriting existing project rules).
-3. Automatically adds `.agents/` and `AGENTS.md` to `.git/info/exclude` to keep working copies clean and prevent pushing personal symlinks upstream.
+3. Automatically adds `.agents/`, `AGENTS.md`, and `.zed/` to `.gitignore` (for Jujutsu repos) or `.git/info/exclude` to keep working copies clean and prevent pushing personal symlinks upstream.
 
 > **Note on Jujutsu (`jj`)**: Linking these markdown files provisions the Zed agent's skills and axioms, which mandate `jj` as the primary VCS tool. To install `jj` or upgrade an existing installation to a higher revision, run:
 > ```bash
