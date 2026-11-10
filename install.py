@@ -71,7 +71,7 @@ def link_project(raw_target: Path | str = ".") -> int:
                 new_entries.append(entry)
         if new_entries:
             with exclude_file.open("a", encoding="utf-8") as f:
-                if existing_lines and not existing_lines[-1].strip() == "":
+                if existing_lines and existing_lines[-1].strip() != "":
                     f.write("\n")
                 for entry in new_entries:
                     f.write(f"{entry}\n")
@@ -83,7 +83,7 @@ def link_project(raw_target: Path | str = ".") -> int:
         new_entries = [e for e in [".agents/", "AGENTS.md"] if e not in existing_lines]
         if new_entries:
             with gitignore.open("a", encoding="utf-8") as f:
-                if existing_lines and not existing_lines[-1].strip() == "":
+                if existing_lines and existing_lines[-1].strip() != "":
                     f.write("\n")
                 for entry in new_entries:
                     f.write(f"{entry}\n")
