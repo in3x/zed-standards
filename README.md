@@ -22,7 +22,8 @@ zed-standards/
 │   ├── lib-cidata.sh          # NoCloud Cloud-Init ISO generation helper
 │   └── lib-telemetry.sh       # Healthchecks.io & NTFY push telemetry helpers
 ├── docs/
-│   └── design.md              # Client/remote architecture and distribution design notes
+│   ├── design.md                      # Client/remote architecture and distribution design notes
+│   └── remote-development-workflow.md # Peer Jujutsu sync & direct SSH deployment workflow
 ├── skills/
 │   ├── package-scaffolding/       # Standard directory layout, root vs. user mode targets
 │   ├── site-conf-pattern/         # Site-specific profile isolation & deterministic resolution
