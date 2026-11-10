@@ -9,7 +9,8 @@ A centralized repository serving two complementary purposes:
 ```text
 zed-standards/
 ├── AGENTS.md                  # Personal engineering standards & architectural axioms
-├── install.sh                 # Linker script for project workspaces and global environments
+├── install.sh                 # Linker script (Bash implementation, preserved for A/B testing)
+├── install.py                 # Linker script (Strongly-typed Python implementation)
 ├── admin/
 │   ├── jj-install.sh          # Jujutsu (jj) installer & auto-upgrader
 │   └── host-bootstrap.sh      # Host bootstrap script (installs jj, ~/.bashrc.d, dev-bootstrap)
@@ -20,7 +21,8 @@ zed-standards/
 │   ├── lib-deploy.sh          # Safe interactive file deployment (diff inspection, chmod/chown)
 │   ├── lib-secret.sh          # Diceware passphrase generator & proof-of-capture ceremony
 │   ├── lib-cidata.sh          # NoCloud Cloud-Init ISO generation helper
-│   └── lib-telemetry.sh       # Healthchecks.io & NTFY push telemetry helpers
+│   ├── lib-telemetry.sh       # Healthchecks.io & NTFY push telemetry helpers
+│   └── site_profile.py        # Universal Stage 1 site profile manager & INI merge engine
 ├── docs/
 │   ├── design.md                      # Client/remote architecture and distribution design notes
 │   └── remote-development-workflow.md # Peer Jujutsu sync & direct SSH deployment workflow
