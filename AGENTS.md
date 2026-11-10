@@ -46,6 +46,14 @@
   - Bash: Always start with `set -euo pipefail`.
   - Python: Use `#!/usr/bin/env python3`. For scripts with third-party dependencies, declare inline metadata via PEP 723 (`# /// script`). Prefer standard library when feasible.
 
+## Command & Documentation Reference Linking
+- **Inline, Non-Intrusive Command Links**: Whenever referencing an operational, administrative, or deployment script in READMEs, guides, or workflow instructions, format the script name as a clickable anchor link (e.g. [`admin/gitea-deploy.sh`](#admingitea-deploysh)).
+- **Dedicated CLI Reference Section**: Always provide a matching Command/CLI Reference section in the documentation detailing:
+  1. Exact command syntax and options/flags.
+  2. Purpose, behavioral side effects, and required privileges (root vs. user).
+  3. Concrete invocation examples.
+- **Principle**: Keep high-level workflows and topology narratives uncluttered while giving operators instant, click-through access to full command mechanics.
+
 ## Deterministic Site Selection (CLI or Menu)
 - **Zero Magic**: Do not use environment variables, local state files, or hostname guessing to deduce sites.
 - **Strict Rule**:

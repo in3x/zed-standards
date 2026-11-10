@@ -51,3 +51,7 @@ project-root/
    - Stage 1 (`site-profile.sh`): Upstream `conf/` $\rightarrow$ `site-conf/<site>/`.
    - Stage 2 (`deploy.sh`): `site-conf/<site>/` $\rightarrow$ Target location (`/etc/<project>/` or `~/.config/<project>/`).
    - In both stages: Run 1 initializes new files; Run N performs a merge/update.
+
+5. **Command Linking & CLI Reference Section**:
+   - In READMEs, format all script references as inline clickable anchor links (e.g. [`admin/deploy.sh`](#admindeploysh)).
+   - Always include a dedicated Command / CLI Reference section detailing options, side effects, required privileges, and examples.

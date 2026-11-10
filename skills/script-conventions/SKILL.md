@@ -134,3 +134,12 @@ EOF
 - Standard progress: `echo "[+] ..."`
 - Error reporting: `echo "[-] Error: ..." >&2`
 - Syslog / journal logging: `logger -t <tag>` for background jobs.
+
+## 7. Command Reference Linking Standard
+Whenever an operational or administrative script is introduced or referenced in READMEs, guides, or operational docs:
+1. **Format as an inline anchor link**: [`admin/<script>.sh`](#admin<script>sh).
+2. **Provide a matching Command/CLI Reference section**:
+   - Exact syntax & option flags.
+   - Purpose, side effects, and required privileges (root vs. user).
+   - Practical invocation examples.
+3. **Principle**: Keep high-level workflows clean while giving operators instant click-through access to full command mechanics.
